@@ -1,0 +1,46 @@
+module TestSpecs {
+
+    resource R {
+      x: u64,
+    }
+
+    public create_resource()
+      aborts_if global_exists<Self.R>(txn_sender)
+      ensures global_exists<Self.R>(txn_sender)
+    {
+      if (exists<R>(get_txn_sender())) {
+        abort(1);
+      }
+      move_to_sender<R>(R{x:1});
+      return;
+    }
+
+    public create_resource_error()
+      aborts_if global_exists<Self.R>(txn_sender)
+      ensures global_exists<Self.R>(txn_sender) //! postcondition might not hold
+    {
+      if (exists<R>(get_txn_sender())) {
+        abort(1);
+      }
+      // move_to_sender<R>(R{x:1}); // This is what we omit to make this fail.
+      return;
+    }
+
+    public div_by_zero(x: u64, y: u64): u64
+      succeeds_if y != 0
+      // TODO: if we use y > 0 instead of y != 0, verification fails.
+      //   Need to investigate why.
+    {
+      let r: u64;
+      r = copy(x) / copy(y);
+      return move(r);
+    }
+
+    public div_by_zero_error(x: u64, y: u64): u64
+      succeeds_if true //! postcondition might not hold
+    {
+      let r: u64;
+      r = copy(x) / copy(y);
+      return move(r);
+    }
+}
